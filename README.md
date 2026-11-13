@@ -4,6 +4,10 @@
 
 > **Статус: бета-версия 2.7.0.** Основные функции работают; отдельные сценарии ещё проверяются.
 
+## Скачать
+
+[**Raspoznavatel-2.7.0-Setup.exe**](https://github.com/flash72i/Raspoznavatel/releases/download/v2.7.0-beta/Raspoznavatel-2.7.0-Setup.exe)
+
 ## Скриншоты
 
 ![Главное окно](docs/screenshots/main.png)
