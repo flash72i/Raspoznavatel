@@ -49,7 +49,12 @@ python -m venv .venv
 
 ## Модели перевода
 
-Файлы `resources/argos/*.argosmodel` не включены в git из-за лимита GitHub 100 МБ на файл. Они входят в установщик; после установки лежат в `resources\argos`.
+Файлы `resources/argos/*.argosmodel` не включены в git из-за лимита GitHub 100 МБ на файл. Они входят в установщик и дополнительно приложены к релизу:
+
+- [translate-en_ru-1_9.argosmodel](https://github.com/flash72i/Raspoznavatel/releases/download/v2.7.0-beta/translate-en_ru-1_9.argosmodel)
+- [translate-ru_en-1_9.argosmodel](https://github.com/flash72i/Raspoznavatel/releases/download/v2.7.0-beta/translate-ru_en-1_9.argosmodel)
+
+Для запуска из исходников скопируйте оба файла в `resources\argos`. После установки они уже лежат в `resources\argos`.
 
 ## Данные
 
