@@ -1,5 +1,6 @@
 Raspoznavatel_data/
-Screenshots/
+/Screenshots/
+!docs/screenshots/
 settings.json
 history.json
 app.log
