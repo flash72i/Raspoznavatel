@@ -1,0 +1,456 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Распознаватель</title>
+<link rel="stylesheet" href="styles.css?v=20261129">
+</head>
+<body>
+
+<!-- ============ АНИМИРОВАННЫЙ ФОН: СВЕТОВЫЕ ЛУЧИ (WebGL2, React Bits LightRays) ============ -->
+<div class="light-rays" id="lightRays" aria-hidden="true">
+  <canvas class="light-rays__canvas" id="lightRaysCanvas" aria-hidden="true"></canvas>
+</div>
+
+<!-- ============ АНИМИРОВАННЫЙ ФОН (Aurora + Particles, стиль React Bits) ============ -->
+<div class="aurora" aria-hidden="true">
+  <div class="aurora-blob blob-1"></div>
+  <div class="aurora-blob blob-2"></div>
+  <div class="aurora-blob blob-3"></div>
+  <div class="aurora-grid"></div>
+</div>
+<canvas id="particles" aria-hidden="true"></canvas>
+
+<!-- ============ ОКНО ПРИЛОЖЕНИЯ ============ -->
+<div class="app" id="app">
+
+<!-- ============ КАСТОМНАЯ ПАНЕЛЬ ЗАГОЛОВКА (вместо системной белой) ============ -->
+<header class="titlebar pywebview-drag-region" id="titlebar">
+  <div class="tb-left">
+    <svg viewBox="0 0 48 48" class="tb-logo" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#22d3ee"/>
+          <stop offset="55%" stop-color="#8b5cf6"/>
+          <stop offset="100%" stop-color="#e879f9"/>
+        </linearGradient>
+      </defs>
+      <rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="url(#lg)" stroke-width="3.4"/>
+      <rect x="28" y="4" width="16" height="16" rx="4" fill="none" stroke="url(#lg)" stroke-width="3.4"/>
+      <rect x="4" y="28" width="16" height="16" rx="4" fill="none" stroke="url(#lg)" stroke-width="3.4"/>
+      <rect x="9.5" y="9.5" width="5" height="5" rx="1.5" fill="url(#lg)"/>
+      <rect x="33.5" y="9.5" width="5" height="5" rx="1.5" fill="url(#lg)"/>
+      <rect x="9.5" y="33.5" width="5" height="5" rx="1.5" fill="url(#lg)"/>
+      <rect x="28" y="28" width="7" height="7" rx="2" fill="url(#lg)"/>
+      <rect x="37" y="28" width="7" height="7" rx="2" fill="url(#lg)" opacity=".7"/>
+      <rect x="28" y="37" width="7" height="7" rx="2" fill="url(#lg)" opacity=".7"/>
+      <rect x="37" y="37" width="7" height="7" rx="2" fill="url(#lg)"/>
+    </svg>
+    <span class="tb-title shiny-text">Распознаватель</span>
+    <span class="tb-sub">QR · текст · экран · перевод — офлайн</span>
+  </div>
+  <div class="tb-buttons">
+    <button class="tb-btn" id="btnMin" data-tooltip="Свернуть" aria-label="Свернуть">
+      <svg viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="1.2" rx=".6" fill="currentColor"/></svg>
+    </button>
+    <button class="tb-btn tb-close" id="btnClose" data-tooltip="Закрыть" aria-label="Закрыть">
+      <svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============ ПАНЕЛЬ ИНСТРУМЕНТОВ (все действия на одной странице) ============ -->
+<div class="toolbar">
+  <button class="btn3d btn-cyan ripple" id="pickBtn" data-tooltip="Загрузить картинку с диска (PNG, JPG, BMP, GIF, TIFF, WEBP)">
+    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M5 20h14v-2H5v2zM5 10h4V6h6v4h4l-7 7-7-7z" fill="currentColor"/></svg>
+    Загрузить изображение
+  </button>
+  <button class="btn3d btn-violet ripple" id="screenBtn" data-tooltip="Выделить область экрана: сначала ищет QR, затем распознаёт текст (Ctrl+Shift+S)">
+    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M3 4h18v12H3V4zm2 2v8h14V6H5zm4 12h6v2H9v-2zm-3 2h12v2H6v-2z" fill="currentColor"/></svg>
+    Распознать с экрана
+    <span class="btn-hk" id="hkScreenChip">Ctrl+Shift+S</span>
+  </button>
+  <button class="btn3d btn-magenta ripple" id="shotBtn" data-tooltip="Свободный скриншот: выделить любую область мышью → в папку Screenshots (Ctrl+Shift+P)">
+    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M9 3L7.2 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11zm0 2A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 10z" fill="currentColor"/></svg>
+    Свободный скриншот
+    <span class="btn-hk" id="hkShotChip">Ctrl+Shift+P</span>
+  </button>
+  <button class="btn3d btn-magenta ripple" id="shotWinBtn" data-tooltip="Скриншот окна: наведите на окно — оно подсветится рамкой, клик снимает именно это окно">
+    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 3v11h14V7H5zm2 2h4v3H7V9z" fill="currentColor"/></svg>
+    Скриншот окна
+  </button>
+  <button class="btn3d btn-teal ripple" id="historyBtn" data-tooltip="История всех распознаваний текста и QR-кодов">
+    <svg viewBox="0 0 24 24" class="btn-icon"><path d="M13 3a9 9 0 0 0-9 9H1l3.8 3.8L8.6 12H6a7 7 0 1 1 2 4.9l-1.4 1.4A9 9 0 1 0 13 3zm-1 5v5l4.2 2.5.8-1.3-3.5-2V8z" fill="currentColor"/></svg>
+    История
+  </button>
+  <div class="toolbar-spacer"></div>
+  <button class="gear-btn ripple" id="settingsBtn" data-tooltip="Настройки, языки, журнал">
+    <svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.7 7.7 0 0 0-1.7-1L15 3H9l-.3 2.6a7.7 7.7 0 0 0-1.7 1l-2.4-1-2 3.4L4.6 11a7.8 7.8 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.8 1.7 1L9 21h6l.3-2.6c.6-.2 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z" fill="currentColor"/></svg>
+  </button>
+</div>
+
+<!-- ============ ОСНОВНАЯ ОБЛАСТЬ (одна страница) ============ -->
+<main class="layout">
+
+  <!-- ЛЕВАЯ КОЛОНКА: источник -->
+  <section class="col-source">
+    <div class="drop-zone compact" id="dropZone">
+      <svg viewBox="0 0 24 24" class="drop-icon"><path d="M19 13v5H5v-5H3v7h18v-7h-2zM11 4h2v9.2l2.6-2.6 1.4 1.4L12 17l-5-5 1.4-1.4L11 13.2V4z" fill="currentColor"/></svg>
+      <p>Перетащите изображение сюда<br><span class="drop-sub">или нажмите «Загрузить изображение»</span></p>
+    </div>
+
+    <div class="preview-card glass-inner hidden" id="previewCard">
+      <img id="previewImg" class="zoomable" alt="Загруженное изображение"
+           data-tooltip="Нажмите, чтобы открыть на всё окно, подвигать и увеличить (колесо = зум)">
+      <div class="preview-row">
+        <span class="preview-name" id="previewName"></span>
+        <span class="preview-auto-hint">⚡ Распознавание запускается автоматически (сначала QR, затем текст)</span>
+      </div>
+      <div class="preview-actions">
+        <button class="mini-btn ripple" id="previewOverlayBtn"
+                data-tooltip="Перевести текст на изображении и наложить перевод поверх">Перевести поверх текста</button>
+        <button class="mini-btn ripple" id="previewExpandBtn"
+                data-tooltip="Открыть изображение на всё окно">⛶</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ПРАВАЯ КОЛОНКА: результаты -->
+  <section class="col-results">
+    <!-- Результат распознавания -->
+    <div class="output-card glass-inner">
+      <div class="output-head">
+        <span class="output-title" id="resultTitle">Результат распознавания</span>
+        <div class="output-actions">
+          <button class="mini-btn ripple" id="copyBtn" data-tooltip="Скопировать результат в буфер обмена">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" fill="currentColor"/></svg> Копировать
+          </button>
+          <span class="tr-dir" data-tooltip="Направление перевода (офлайн)">
+            <select class="tr-select" id="trFrom2" aria-label="С какого языка"></select>
+            <span class="tr-arrow">→</span>
+            <select class="tr-select" id="trTo2" aria-label="На какой язык"></select>
+          </span>
+          <button class="mini-btn ripple" id="translateBtn" data-tooltip="Перевести текст выбранным сервисом (Локально / Google — переключатель в карточке перевода)">
+            <svg viewBox="0 0 24 24"><path d="M12.9 3h-1.8l-.8 2.2H6.4v1.8h3.3C8.6 9.9 7 12.3 4.8 13.6l1 1.7c1.9-1.2 3.4-3.2 4.4-5.5.9 1.7 2.1 3.2 3.6 4.3l1.1-1.6c-1.7-1.2-3-2.9-3.8-4.9h3.2L12.9 3zm3.5 7.6L12 22h2l1-2.8h4.3L20.3 22h2l-4.4-11.4h-1.5z" fill="currentColor"/></svg> Перевести
+          </button>
+          <label class="auto-tr" data-tooltip="После распознавания сразу переводить текст на русский">
+            <input type="checkbox" id="autoTranslate">
+            <span>Автоперевод</span>
+          </label>
+          <button class="mini-btn ripple" id="clearBtn" data-tooltip="Очистить результат">
+            <svg viewBox="0 0 24 24"><path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4z" fill="currentColor"/></svg> Очистить
+          </button>
+        </div>
+      </div>
+      <div class="output-body hidden" id="qrResults"><!-- карточки QR-кодов --></div>
+      <textarea class="output-edit" id="mainOutput" placeholder="Распознанный текст появится здесь… Его можно отредактировать, скопировать или перевести." spellcheck="false"></textarea>
+    </div>
+
+    <!-- Перевод -->
+    <div class="output-card glass-inner translate-card">
+      <div class="output-head">
+        <span class="output-title">Перевод <span class="editable-hint">(можно редактировать)</span></span>
+        <div class="output-actions">
+          <span class="tr-engine" id="trEngine" role="group" aria-label="Сервис перевода">
+            <button class="tr-engine-btn active" data-engine="local"
+                    data-tooltip="Локальный перевод: на вашем ПК, без интернета и ключей">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2v3H7a2 2 0 0 0-2 2v2H2v2h3v2H2v2h3v2a2 2 0 0 0 2 2h2v3h2v-3h2v3h2v-3h2a2 2 0 0 0 2-2v-2h3v-2h-3v-2h3v-2h-3V7a2 2 0 0 0-2-2h-2V2h-2v3h-2V2H9Zm-2 7h10v10H7V9Z" fill="currentColor"/></svg>Локально
+            </button>
+            <button class="tr-engine-btn" data-engine="google"
+                    data-tooltip="Google Переводчик: онлайн, работает без ключа — как в браузере">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#4285F4"/><text x="12" y="16.8" text-anchor="middle" font-size="14" font-weight="700" font-family="Arial, Helvetica, sans-serif" fill="#ffffff">G</text></svg>Google
+            </button>
+          </span>
+          <span class="tr-dir" data-tooltip="Направление перевода: исходный язык определяется автоматически («Авто»), другие языки скачиваются один раз и работают офлайн">
+            <select class="tr-select" id="trFrom" aria-label="С какого языка"></select>
+            <button class="tr-swap ripple" id="trSwap" data-tooltip="Поменять направления местами" aria-label="Поменять направления">⇄</button>
+            <select class="tr-select" id="trTo" aria-label="На какой язык"></select>
+          </span>
+          <button class="mini-btn ripple" id="copyTrBtn" data-tooltip="Скопировать перевод">
+            <svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" fill="currentColor"/></svg> Копировать
+          </button>
+          <button class="mini-btn ripple" id="clearTrBtn" data-tooltip="Очистить перевод">
+            <svg viewBox="0 0 24 24"><path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4z" fill="currentColor"/></svg> Очистить
+          </button>
+        </div>
+      </div>
+      <textarea class="output-edit short" id="trOutput" placeholder="Нажмите «Перевести» — перевод появится здесь…" spellcheck="false"></textarea>
+    </div>
+  </section>
+</main>
+
+<!-- ============ СТАТУС-БАР ============ -->
+<footer class="status-bar glass">
+  <button class="status-theme" id="themeBtn" data-tooltip="Тема оформления" aria-label="Тема оформления"
+          aria-haspopup="dialog" aria-expanded="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </button>
+  <span class="status-dot" id="statusDot"></span>
+  <span class="status-text" id="statusText">Инициализация…</span>
+  <span class="status-progress" id="statusProgress">
+    <span class="status-progress-track"><span class="status-progress-fill" id="statusProgressFill"></span></span>
+    <span class="status-progress-pct" id="statusProgressPct">0%</span>
+  </span>
+  <span class="status-hotkeys" id="statusHotkeys">Ctrl+Shift+S — распознать · Ctrl+Shift+P — скриншот</span>
+  <span class="status-right" id="statusRight">офлайн</span>
+  <button class="status-folder" id="statusFolderBtn" data-tooltip="Открыть папку, куда сохраняются скриншоты" aria-label="Открыть папку скриншотов">
+    <svg viewBox="0 0 24 24"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" fill="currentColor"/></svg>
+  </button>
+</footer>
+
+</div><!-- /.app -->
+
+
+<!-- ============ МАЛЕНЬКАЯ ИКОНКА ТЕМЫ + ВЫПАДАЮЩИЙ СПИСОК ============ -->
+<div class="theme-pop hidden" id="themePop" role="dialog" aria-label="Тема оформления">
+  <div class="theme-pop-head">Тема</div>
+  <div class="theme-list" id="themeList">
+    <button class="theme-row" type="button" data-theme="spotlight" aria-pressed="true">
+      <span class="theme-swatch" style="--sw1:#22d3ee;--sw2:#8b5cf6"></span>
+      <span class="theme-name">Синяя</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="sunbeam" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#f5b35c;--sw2:#e08a4a"></span>
+      <span class="theme-name">Янтарная</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="stage" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#f472b6;--sw2:#c084fc"></span>
+      <span class="theme-name">Сцена</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="searchlight" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#93c5fd;--sw2:#60a5fa"></span>
+      <span class="theme-name">Прожектор</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="cathedral" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#34d399;--sw2:#fbbf24"></span>
+      <span class="theme-name">Собор</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="underwater" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#2dd4bf;--sw2:#38bdf8"></span>
+      <span class="theme-name">Подводная</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="theme-row" type="button" data-theme="horizon" aria-pressed="false">
+      <span class="theme-swatch" style="--sw1:#fb923c;--sw2:#f97316"></span>
+      <span class="theme-name">Горизонт</span>
+      <svg class="theme-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ============ ПАНЕЛЬ НАСТРОЕК (выезжает справа) ============ -->
+<div class="drawer-backdrop hidden" id="drawerBackdrop"></div>
+<aside class="drawer glass" id="settingsDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>Настройки</h2>
+    <button class="tb-btn" id="drawerClose" aria-label="Закрыть настройки">
+      <svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="settings-card glass-inner">
+      <h3>Поведение</h3>
+      <label class="uiverse-switch"><input type="checkbox" id="setAutoCopy" checked>
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Автоматически копировать результат</span></label>
+      <p class="card-hint">Распознанный текст и перевод сразу попадают в буфер обмена —
+      вставка (Ctrl+V) работает без лишних кликов. Звуки уведомлений («бульк» на
+      готово, сигнал на ошибку) включены всегда. Распознавание с экрана всегда
+      умное: сначала ищет QR/штрих-коды, затем текст.</p>
+<label class="uiverse-switch"><input type="checkbox" id="setQuickPanel">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Плавающая панель быстрого доступа («Фото», «Экран», «Скриншот»)</span></label>
+      <p class="card-hint">Маленькая панель 282×52 поверх всех окон: те же действия, что и главные кнопки, плюс «✕». Панель можно перетаскивать мышью куда угодно (позиция запоминается), она видна, даже когда окно свёрнуто в трей. Кнопка «▲» закрепляет панель поверх всех окон (или открепляет). Наведите мышку на «Скриншот» — выезжают два режима: свободная область или окно. Пока панель обрабатывает действие, на кнопке крутится индикатор. Показать и скрыть панель можно также из меню иконки трея (правый клик) — там же лежат быстрые действия.</p>
+      <div class="set-row">
+        <span class="set-row-label" data-tooltip="30% — почти прозрачная, 100% — непрозрачная">Прозрачность панели</span>
+        <input type="range" id="setPanelOpacity" min="30" max="100" step="5" class="set-range">
+        <span class="set-row-label" id="panelOpacityVal">100%</span>
+      </div>
+      <div class="set-row">
+        <span class="set-row-label" data-tooltip="Что делать при нажатии ✕ в углу окна">Действие кнопки ✕</span>
+        <select class="set-select" id="setCloseAction">
+          <option value="exit">Закрыть программу</option>
+          <option value="tray">Свернуть в трей (скрыть с панели задач)</option>
+        </select>
+      </div>
+      <p class="card-hint" id="closeActionHint">«Свернуть в трей»: программа остаётся работать — иконка в области уведомлений (трей) справа внизу, горячие клавиши действуют. <b>Один клик левой кнопкой по иконке всегда возвращает окно на экран</b> (спрятать окно можно только правым кликом → «Скрыть окно» или кнопкой ✕). Выход — правый клик по иконке → «Выход». Если иконка вдруг перестанет отвечать, программа сама вернёт окно на экран, а повторный запуск ярлыка откроет его в любом случае.</p>
+      <div class="folder-row">
+        <button class="mini-btn ripple" id="openShotsBtn">📁 Папка скриншотов</button>
+        <button class="mini-btn ripple" id="openDataBtn">📁 Папка данных</button>
+      </div>
+    </div>
+
+    <div class="settings-card glass-inner">
+      <h3>Тема оформления</h3>
+      <label class="uiverse-switch"><input type="checkbox" id="setLightRays" checked>
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Анимированный фон «Световые лучи»</span></label>
+      <div class="set-row">
+        <span class="set-row-label" data-tooltip="Тема меняет палитру интерфейса и рисунок лучей. Быстрое переключение — значок палитры внизу слева">Тема</span>
+        <select class="set-select" id="setLightRaysPreset">
+          <option value="spotlight">Синяя</option>
+          <option value="sunbeam">Янтарная — тёплый луч</option>
+          <option value="stage">Сцена — розовый свет</option>
+          <option value="searchlight">Прожектор — холодный луч</option>
+          <option value="cathedral">Собор — изумруд и золото</option>
+          <option value="underwater">Подводная — бирюза</option>
+          <option value="horizon">Горизонт — закат</option>
+        </select>
+      </div>
+      <p class="card-hint">Тема меняет палитру всего интерфейса и рисунок лучей. Быстрое
+      переключение — значок палитры внизу слева. Фон можно выключить — на слабых
+      видеокартах интерфейс будет работать быстрее.</p>
+    </div>
+
+    <div class="settings-card glass-inner">
+      <h3>Скриншоты</h3>
+      <p class="card-hint">Куда сохранять снимки области. По умолчанию — папка <i>Screenshots</i> рядом с программой.</p>
+      <div class="shots-dir-row">
+        <div class="shots-dir-path" id="shotsDirPath">не выбрана (по умолчанию)</div>
+        <div class="shots-dir-actions">
+          <button class="mini-btn ripple" id="chooseShotsDirBtn">Выбрать папку…</button>
+          <button class="mini-btn ripple" id="resetShotsDirBtn">По умолчанию</button>
+        </div>
+      </div>
+    </div>
+
+<div class="settings-card glass-inner">
+      <h3>Горячие клавиши</h3>
+      <p class="card-hint">Нажмите «Записать» и нажмите нужную комбинацию (минимум 2 клавиши, например Ctrl+F12 или Ctrl+Shift+X). Работает в любом приложении.</p>
+      <div class="hk-row">
+        <span class="hk-name">Распознать область</span>
+        <input class="hk-input" id="hkRecognize" readonly value="ctrl+shift+s">
+        <button class="mini-btn ripple" id="hkRecBtn">Записать</button>
+      </div>
+      <div class="hk-row">
+        <span class="hk-name">Скриншот области</span>
+        <input class="hk-input" id="hkScreenshot" readonly value="ctrl+shift+p">
+        <button class="mini-btn ripple" id="hkShotBtn">Записать</button>
+      </div>
+      <div class="folder-row">
+        <button class="mini-btn ripple" id="hkResetBtn">Сбросить по умолчанию</button>
+      </div>
+    </div>
+
+    <div class="settings-card glass-inner">
+      <h3>Автозапуск</h3>
+      <label class="uiverse-switch"><input type="checkbox" id="setAutostart">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Запускать вместе с Windows (свёрнутой в трей)</span></label>
+      <p class="card-hint">Создаёт ярлык в папке «Автозагрузка» пользователя — без реестра и прав администратора. При включении ПК программа запустится свёрнутой, иконка будет в трее; горячие клавиши работают сразу.</p>
+    </div>
+
+<div class="settings-card glass-inner">
+      <h3>Перевод: источник</h3>
+      <div class="set-row">
+        <span class="set-row-label" data-tooltip="Что переводит текст">Перевод</span>
+        <select class="set-select" id="setTrProvider">
+          <option value="local">Локально (без интернета)</option>
+          <option value="google">Google Переводчик (онлайн, без ключа)</option>
+        </select>
+      </div>
+      <p class="card-hint"><b>Локально</b> — перевод на вашем ПК: без интернета,
+      ключей и отправки текста куда-либо (основной режим). <b>Google</b>-перевод
+      работает онлайн и без ключа — так же, как переводчик в браузере. Если
+      интернет недоступен, программа автоматически переводит локально.
+      Переключатель сервиса дублируется на главном экране, в карточке перевода.</p>
+    </div>
+
+<div class="settings-card glass-inner about-mini">
+      <p><b>«Распознаватель»</b> v<span id="versionLabel">1.0.0</span> — распознавание текста
+      и QR-кодов с экрана и изображений, перевод. Работает офлайн, интернет нужен
+      только для онлайн-перевода.</p>
+    </div>
+
+    <div class="settings-card glass-inner">
+      <h3>Журнал программы</h3>
+      <p class="card-hint">Все действия, успехи и ошибки. Скопируйте и пришлите разработчику — это поможет быстро починить проблему.</p>
+      <div class="log-box" id="logBox" tabindex="0"><div class="log-empty" id="logEmpty">Журнал пуст…</div></div>
+      <div class="folder-row">
+        <button class="mini-btn ripple" id="copyLogBtn">
+          <svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" fill="currentColor"/></svg> Копировать журнал
+        </button>
+        <button class="mini-btn ripple" id="clearLogBtn">Очистить журнал</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ ОКНО ИСТОРИИ РАСПОЗНАВАНИЙ  ============ -->
+<div class="drawer-backdrop hidden" id="historyBackdrop"></div>
+<aside class="drawer glass history-drawer" id="historyDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h2>История распознаваний</h2>
+    <button class="tb-btn" id="historyClose" aria-label="Закрыть историю">
+      <svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="history-tools">
+    <input class="history-search" id="historySearch" type="text"
+           placeholder="Поиск по истории…" aria-label="Поиск по истории">
+    <button class="mini-btn ripple" id="historyRefresh" data-tooltip="Обновить список">⟳</button>
+    <button class="mini-btn ripple danger" id="historyClear" data-tooltip="Удалить ВСЮ историю">Очистить</button>
+  </div>
+  <div class="drawer-body history-body" id="historyList">
+    <p class="placeholder">История пуста. Распознайте текст или QR-код — запись появится здесь.</p>
+  </div>
+</aside>
+
+<!-- ============ ПРОСМОТР ИЗОБРАЖЕНИЯ + ПЕРЕВОД ПОВЕРХ ============ -->
+<div class="image-viewer hidden" id="imageViewer" aria-hidden="true">
+  <div class="image-viewer-panel">
+    <div class="image-viewer-bar">
+      <span class="image-viewer-name" id="imageViewerName"></span>
+      <button class="mini-btn ripple" id="imageOverlayBtn"
+              data-tooltip="Распознать текст и наложить перевод поверх картинки">Перевести поверх текста</button>
+      <button class="mini-btn ripple hidden" id="imageOriginalBtn">Оригинал</button>
+      <button class="mini-btn ripple" id="imageFullBtn"
+              data-tooltip="Развернуть на всё окно">⛶</button>
+      <button class="mini-btn ripple danger" id="imageViewerClose"
+              aria-label="Закрыть просмотр">✕</button>
+    </div>
+    <div class="image-viewer-stage" id="imageViewerStage">
+      <img id="imageViewerImg" alt="Просмотр изображения" draggable="false">
+    </div>
+  </div>
+</div>
+
+<!-- ============ ЛОАДЕР (стиль Uiverse) + ШКАЛА ПРОГРЕССА ============ -->
+<div class="loader-overlay hidden" id="loaderOverlay">
+  <div class="loader-card glass-inner">
+    <div class="uiverse-loader">
+      <div class="ring r1"></div><div class="ring r2"></div>
+      <div class="ring r3"></div><div class="ring r4"></div>
+    </div>
+    <p class="loader-text" id="loaderText">Обработка…</p>
+    <div class="progress-track hidden" id="progressTrack">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <p class="progress-pct hidden" id="progressPct">0%</p>
+  </div>
+</div>
+
+<!-- ============ ТОСТЫ ============ -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ============ ЗОНЫ РЕСАЙЗА ОКНА (frameless) ============ -->
+<div class="rz rz-r" id="rzR"></div>
+<div class="rz rz-b" id="rzB"></div>
+<div class="rz rz-br" id="rzBR"></div>
+
+<script src="light-rays.js?v=20261129"></script>
+<script src="app.js?v=20261129"></script>
+</body>
+</html>

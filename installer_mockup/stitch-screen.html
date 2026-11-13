@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Установка Распознаватель 2.7.0</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            heading: ['Manrope', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            space: {
+              950: '#040711',
+              900: '#070B16',
+              850: '#0B1124',
+              800: '#101A38',
+              700: '#15224A',
+            },
+            glass: {
+              card: 'rgba(17, 24, 46, 0.72)',
+              surface: 'rgba(16, 26, 56, 0.6)',
+              border: 'rgba(56, 75, 128, 0.35)',
+              glow: 'rgba(34, 211, 238, 0.15)',
+            },
+            aurora: {
+              cyan: '#22D3EE',
+              violet: '#8B5CF6',
+              magenta: '#E879F9',
+              mint: '#34D399',
+            },
+            txt: {
+              primary: '#E8ECFF',
+              secondary: '#9AA5C9',
+              muted: '#64708F',
+            }
+          },
+          boxShadow: {
+            'aurora-glow': '0 0 40px -10px rgba(34, 211, 238, 0.3), 0 0 60px -15px rgba(139, 92, 246, 0.25)',
+            'card-active': '0 0 0 1.5px #22D3EE, 0 10px 30px -10px rgba(34, 211, 238, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            'card-idle': '0 0 0 1px rgba(71, 85, 130, 0.3), 0 8px 24px -12px rgba(4, 7, 17, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+            'window': '0 25px 70px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(56, 75, 128, 0.45)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #040711;
+      color: #E8ECFF;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+    
+    /* Background subtle grid and scanline effect */
+    .bg-grid-tech {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+    }
+    
+    .scanline-overlay {
+      background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.25) 51%);
+      background-size: 100% 4px;
+    }
+
+    .aurora-bloom-1 {
+      filter: blur(65px);
+      background: radial-gradient(circle, rgba(34, 211, 238, 0.22) 0%, rgba(139, 92, 246, 0.15) 50%, transparent 80%);
+    }
+
+    .aurora-bloom-2 {
+      filter: blur(55px);
+      background: radial-gradient(circle, rgba(232, 121, 249, 0.18) 0%, rgba(34, 211, 238, 0.1) 60%, transparent 80%);
+    }
+
+    /* Windows Caption Button hover states */
+    .caption-btn {
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .caption-btn:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+    .caption-btn-close:hover {
+      background-color: #E81123 !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Custom radio animation */
+    .custom-radio {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex items-center justify-center bg-space-950 p-4 relative antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- Desktop Ambient Canvas Background (Simulates real dark OS workspace) -->
+  <div class="absolute inset-0 bg-grid-tech opacity-60 pointer-events-none"></div>
+  <div class="absolute top-1/4 left-1/5 w-[520px] h-[340px] aurora-bloom-1 rounded-full pointer-events-none opacity-40"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-[480px] h-[320px] aurora-bloom-2 rounded-full pointer-events-none opacity-30"></div>
+  
+  <!-- Subtle desktop background watermarking/context -->
+  <div class="absolute bottom-4 left-6 text-[11px] font-mono text-txt-muted/60 tracking-wider flex items-center gap-2">
+    <span class="w-1.5 h-1.5 rounded-full bg-aurora-mint animate-pulse"></span>
+    DESKTOP HOST · 64-BIT ENVIRONMENT
+  </div>
+
+  <!-- ================= WINDOW CONTAINER (1040 x 740 px) ================= -->
+  <div class="relative w-[1040px] h-[740px] rounded-[14px] bg-space-900 border border-[#263559] shadow-window flex flex-col overflow-hidden backdrop-blur-2xl">
+    
+    <!-- Outer glass highlight stroke -->
+    <div class="absolute inset-0 rounded-[14px] pointer-events-none border border-white/10 z-50"></div>
+
+    <!-- 1. WINDOW TITLE BAR (Slim native Windows 11 style) -->
+    <header class="h-[38px] bg-space-950/80 border-b border-[#1C2744] flex items-center justify-between px-3 select-none z-40 shrink-0">
+      <div class="flex items-center gap-2.5">
+        <!-- App icon in title bar -->
+        <div class="w-4 h-4 rounded-[4px] bg-gradient-to-tr from-aurora-cyan to-aurora-violet p-[1px] flex items-center justify-center">
+          <div class="w-full h-full bg-space-950 rounded-[3px] flex items-center justify-center">
+            <svg class="w-2.5 h-2.5 text-aurora-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
+        <span class="text-xs font-medium text-txt-primary tracking-wide">Установка — Распознаватель 2.7.0</span>
+        <span class="text-[10px] font-mono text-txt-muted/80 bg-space-850 px-1.5 py-0.5 rounded border border-[#213054]">x64 offline</span>
+      </div>
+
+      <!-- Windows Caption Buttons: Minimize, Maximize/Restore, Close -->
+      <div class="flex items-center -mr-3 h-full">
+        <button class="caption-btn w-[46px] h-full flex items-center justify-center text-txt-secondary hover:text-txt-primary" title="Свернуть">
+          <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
+            <rect width="10" height="1"/>
+          </svg>
+        </button>
+        <button class="caption-btn w-[46px] h-full flex items-center justify-center text-txt-secondary hover:text-txt-primary" title="Развернуть">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="0.5" y="0.5" width="9" height="9"/>
+          </svg>
+        </button>
+        <button class="caption-btn caption-btn-close w-[46px] h-full flex items-center justify-center text-txt-secondary" title="Закрыть">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M1 1L9 9M9 1L1 9"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- WINDOW BODY CONTENT (3 Columns: Left Hero Rail, Main Flow, Right Micro Edge Rail) -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+      <!-- ================= 2. LEFT HERO RAIL (~290px wide) ================= -->
+      <aside class="w-[290px] bg-gradient-to-b from-[#0B1228] via-[#0E1733] to-[#080D1D] border-r border-[#1D2949] flex flex-col justify-between p-6 relative overflow-hidden shrink-0">
+        
+        <!-- Rail Glow & Scanline Atmosphere -->
+        <div class="absolute -top-12 -left-12 w-48 h-48 bg-aurora-cyan/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-20 -right-8 w-44 h-44 bg-aurora-violet/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute inset-0 scanline-overlay opacity-15 pointer-events-none"></div>
+
+        <!-- TOP: Product Identity & Badges -->
+        <div class="relative z-10">
+          <!-- Logo & Wordmark Header -->
+          <div class="flex items-start gap-3.5 mb-5">
+            <!-- Bespoke Scanner-Eye Logo Vector -->
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#182752] to-[#0A1024] p-[1px] shadow-lg shadow-aurora-cyan/10 relative group">
+              <div class="absolute inset-0 rounded-xl bg-aurora-cyan/20 blur-sm opacity-60"></div>
+              <div class="relative w-full h-full rounded-[11px] bg-[#0A1126] flex items-center justify-center overflow-hidden border border-cyan-400/30">
+                <!-- Optical scanner retina & target lines -->
+                <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                  <!-- Reticle outer corners -->
+                  <path d="M5 11V7C5 5.89543 5.89543 5 7 5H11" stroke="#22D3EE" stroke-width="1.75" stroke-linecap="round"/>
+                  <path d="M21 5H25C26.1046 5 27 5.89543 27 7V11" stroke="#22D3EE" stroke-width="1.75" stroke-linecap="round"/>
+                  <path d="M27 21V25C27 26.1046 26.1046 27 25 27H21" stroke="#22D3EE" stroke-width="1.75" stroke-linecap="round"/>
+                  <path d="M11 27H7C5.89543 27 5 26.1046 5 25V21" stroke="#22D3EE" stroke-width="1.75" stroke-linecap="round"/>
+                  
+                  <!-- Optical iris rings -->
+                  <circle cx="16" cy="16" r="7.5" stroke="#8B5CF6" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.8"/>
+                  <circle cx="16" cy="16" r="4" fill="url(#eyeGrad)" stroke="#22D3EE" stroke-width="1.2"/>
+                  <!-- Core sensor dot -->
+                  <circle cx="16" cy="16" r="1.5" fill="#E8ECFF"/>
+
+                  <!-- Laser scan beam horizontal -->
+                  <line x1="6" y1="16" x2="26" y2="16" stroke="#22D3EE" stroke-width="1" opacity="0.6"/>
+
+                  <defs>
+                    <linearGradient id="eyeGrad" x1="12" y1="12" x2="20" y2="20" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#22D3EE" stop-opacity="0.6"/>
+                      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0.4"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <h1 class="font-heading font-extrabold text-[15px] tracking-wider text-txt-primary uppercase leading-tight">
+                РАСПОЗНАВАТЕЛЬ
+              </h1>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-xs font-mono font-medium text-aurora-cyan">v2.7.0</span>
+                <span class="text-[10px] text-txt-muted">· Desktop Pro</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3 Tiny Glass Chips: Offline, No Telemetry, No Admin Rights -->
+          <div class="flex flex-col gap-1.5 mb-2">
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-space-850/80 border border-emerald-500/25 text-[11px] text-txt-primary backdrop-blur-md">
+              <svg class="w-3.5 h-3.5 text-aurora-mint shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium tracking-tight">ОФЛАЙН РЕЖИМ</span>
+              <span class="ml-auto text-[9px] font-mono text-aurora-mint/90 bg-aurora-mint/10 px-1 py-0.2 rounded">100%</span>
+            </div>
+
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-space-850/80 border border-cyan-500/25 text-[11px] text-txt-primary backdrop-blur-md">
+              <svg class="w-3.5 h-3.5 text-aurora-cyan shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="font-medium tracking-tight">БЕЗ ТЕЛЕМЕТРИИ</span>
+              <span class="ml-auto text-[9px] font-mono text-aurora-cyan/90 bg-aurora-cyan/10 px-1 py-0.2 rounded">0 ТРЕКЕРОВ</span>
+            </div>
+
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-space-850/80 border border-violet-500/25 text-[11px] text-txt-primary backdrop-blur-md">
+              <svg class="w-3.5 h-3.5 text-aurora-violet shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              <span class="font-medium tracking-tight">БЕЗ ПРАВ АДМИНА</span>
+              <span class="ml-auto text-[9px] font-mono text-aurora-violet/90 bg-aurora-violet/10 px-1 py-0.2 rounded">USER LEVEL</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER: Bespoke Abstract "Document Scanner" Illustration -->
+        <div class="my-auto relative flex items-center justify-center py-2">
+          <div class="relative w-[210px] h-[220px]">
+            <!-- Subtle optical grid background -->
+            <div class="absolute inset-0 rounded-2xl border border-cyan-500/20 bg-space-950/40 p-3 flex flex-col justify-between overflow-hidden">
+              <div class="grid grid-cols-6 gap-2 opacity-25">
+                <div class="h-1 bg-cyan-400/40 rounded"></div>
+                <div class="h-1 bg-cyan-400/40 rounded col-span-2"></div>
+                <div class="h-1 bg-cyan-400/40 rounded col-span-3"></div>
+              </div>
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-violet-500/20"></div>
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full border border-dashed border-cyan-500/15"></div>
+            </div>
+
+            <!-- Custom Document Scanner SVG Artwork -->
+            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 210 220" fill="none">
+              <!-- Defs for Glows & Gradients -->
+              <defs>
+                <linearGradient id="docGrad" x1="30" y1="30" x2="160" y2="180" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#141E3D"/>
+                  <stop offset="0.5" stop-color="#18254C"/>
+                  <stop offset="1" stop-color="#0E162F"/>
+                </linearGradient>
+                <linearGradient id="scanBeam" x1="20" y1="90" x2="190" y2="90" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#22D3EE" stop-opacity="0"/>
+                  <stop offset="0.5" stop-color="#22D3EE" stop-opacity="0.9"/>
+                  <stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/>
+                </linearGradient>
+                <radialGradient id="bloomGlow" cx="105" cy="95" r="50" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#22D3EE" stop-opacity="0.35"/>
+                  <stop offset="1" stop-color="#22D3EE" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              <!-- Central Light Bloom behind Sheet -->
+              <circle cx="105" cy="95" r="55" fill="url(#bloomGlow)"/>
+
+              <!-- Floating Paper Sheet with Perspective Shift -->
+              <g transform="rotate(-4 105 100)">
+                <!-- Sheet Shadow -->
+                <rect x="42" y="38" width="126" height="136" rx="8" fill="#03060E" fill-opacity="0.6"/>
+                <!-- Sheet Body -->
+                <rect x="40" y="34" width="126" height="136" rx="8" fill="url(#docGrad)" stroke="#384B80" stroke-width="1.2"/>
+                
+                <!-- Inner Highlight Stroke -->
+                <rect x="41" y="35" width="124" height="134" rx="7" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+                <!-- QR Finder Corner Box (Top Right of sheet) -->
+                <rect x="136" y="46" width="18" height="18" rx="3" stroke="#22D3EE" stroke-width="1.2" fill="#0B132B"/>
+                <rect x="141" y="51" width="8" height="8" rx="1.5" fill="#22D3EE"/>
+
+                <!-- OCR Mock Text Lines (Recognized Data Lines) -->
+                <line x1="56" y1="52" x2="118" y2="52" stroke="#E8ECFF" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+                <line x1="56" y1="62" x2="126" y2="62" stroke="#9AA5C9" stroke-width="1.75" stroke-linecap="round" opacity="0.6"/>
+                <line x1="56" y1="72" x2="100" y2="72" stroke="#9AA5C9" stroke-width="1.75" stroke-linecap="round" opacity="0.6"/>
+                
+                <!-- Divider OCR dotted segment -->
+                <line x1="56" y1="84" x2="152" y2="84" stroke="#64708F" stroke-width="1" stroke-dasharray="3 3"/>
+
+                <!-- Optical Recognition Tag Brackets / Bounding Boxes -->
+                <rect x="54" y="98" width="58" height="24" rx="4" stroke="#8B5CF6" stroke-width="1" stroke-dasharray="2 2" fill="rgba(139,92,246,0.12)"/>
+                <text x="60" y="113" font-family="'JetBrains Mono', monospace" font-size="9" fill="#E879F9" font-weight="600">TEXT_OCR</text>
+
+                <!-- Translation / Vector Transformation Arrows -->
+                <path d="M120 108L132 108M132 108L127 103M132 108L127 113" stroke="#34D399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <!-- Output Translation Target Box -->
+                <rect x="140" y="100" width="16" height="16" rx="3" stroke="#34D399" stroke-width="1" fill="rgba(52,211,153,0.1)"/>
+                <text x="144" y="112" font-family="'Inter', sans-serif" font-size="8" fill="#34D399" font-weight="bold">RU</text>
+
+                <line x1="56" y1="138" x2="148" y2="138" stroke="#9AA5C9" stroke-width="1.75" stroke-linecap="round" opacity="0.4"/>
+                <line x1="56" y1="148" x2="115" y2="148" stroke="#9AA5C9" stroke-width="1.75" stroke-linecap="round" opacity="0.3"/>
+              </g>
+
+              <!-- Dynamic Cyan Optical Scan Laser Line (Cutting horizontally across) -->
+              <g>
+                <line x1="18" y1="94" x2="192" y2="94" stroke="url(#scanBeam)" stroke-width="2.5"/>
+                <!-- Laser line focus beads -->
+                <circle cx="45" cy="94" r="2.5" fill="#FFFFFF"/>
+                <circle cx="165" cy="94" r="2.5" fill="#FFFFFF"/>
+              </g>
+
+              <!-- Technical Reticle Target Corners surrounding the scanning scene -->
+              <path d="M24 44H36M24 44V56" stroke="#22D3EE" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M186 44H174M186 44V56" stroke="#22D3EE" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M24 176H36M24 176V164" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M186 176H174M186 176V164" stroke="#8B5CF6" stroke-width="1.5" stroke-linecap="round"/>
+
+              <!-- Orbiting Technical Data Particles -->
+              <circle cx="32" cy="115" r="1.5" fill="#22D3EE"/>
+              <circle cx="178" cy="80" r="2" fill="#E879F9"/>
+              <circle cx="140" cy="190" r="1.5" fill="#34D399"/>
+              <circle cx="70" cy="22" r="1.5" fill="#8B5CF6"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- BOTTOM: System Requirements & Technical Waveform -->
+        <div class="relative z-10 pt-3 border-t border-[#1C2744]">
+          <div class="flex items-center justify-between text-[11px] font-mono text-txt-secondary mb-2">
+            <span>Windows 10/11 · x64</span>
+            <span class="text-aurora-cyan/80">NTFS/ReFS</span>
+          </div>
+
+          <!-- Decorative Audio/Sensor Waveform SVG -->
+          <div class="h-6 w-full flex items-center gap-[3px] px-1 py-1 rounded bg-space-950/60 border border-[#1C2744]">
+            <div class="w-1 h-2 bg-aurora-cyan/40 rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-cyan/60 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-cyan rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-cyan/50 rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-violet/50 rounded-full"></div>
+            <div class="w-1 h-5 bg-aurora-violet rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-violet/40 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-cyan/70 rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-cyan/50 rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-mint/40 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-mint/70 rounded-full"></div>
+            <div class="w-1 h-5 bg-aurora-mint rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-mint/60 rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-cyan/40 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-cyan/80 rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-cyan/30 rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-violet/60 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-violet rounded-full"></div>
+            <div class="w-1 h-1 bg-aurora-violet/40 rounded-full"></div>
+            <div class="w-1 h-3 bg-aurora-cyan/70 rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-cyan/40 rounded-full"></div>
+            <div class="w-1 h-4 bg-aurora-cyan/90 rounded-full"></div>
+            <div class="w-1 h-2 bg-aurora-cyan/30 rounded-full"></div>
+            <div class="w-1 h-1 bg-aurora-cyan/20 rounded-full"></div>
+          </div>
+          <div class="flex justify-between items-center text-[9px] font-mono text-txt-muted mt-1.5">
+            <span>NEURAL OCR ENGINE</span>
+            <span>READY</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ================= 3. MAIN INTERACTION AREA ================= -->
+      <main class="flex-1 flex flex-col justify-between p-8 bg-space-900 relative overflow-hidden">
+        
+        <!-- Subtle Aurora ambient blooms inside main panel -->
+        <div class="absolute -top-24 right-10 w-80 h-80 aurora-bloom-1 rounded-full pointer-events-none opacity-25"></div>
+        <div class="absolute bottom-10 left-10 w-72 h-72 aurora-bloom-2 rounded-full pointer-events-none opacity-20"></div>
+
+        <!-- TOP PART: Stepper, Headline & Subline -->
+        <div class="relative z-10">
+          
+          <!-- Slim Step Progress Indicator -->
+          <div class="flex items-center gap-3 mb-6">
+            <!-- Step 1: Active Cyan -->
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 rounded-full bg-aurora-cyan text-space-950 flex items-center justify-center text-[11px] font-bold shadow-sm shadow-cyan-400/50">
+                1
+              </div>
+              <span class="text-xs font-semibold tracking-wider text-aurora-cyan uppercase font-heading">
+                ВЫБОР
+              </span>
+            </div>
+
+            <!-- Gradient Connecting Line -->
+            <div class="w-12 h-[2px] bg-gradient-to-r from-aurora-cyan to-[#2A375A] rounded-full"></div>
+
+            <!-- Step 2: Inactive Folder -->
+            <div class="flex items-center gap-2 opacity-50">
+              <div class="w-5 h-5 rounded-full bg-space-800 border border-[#2B395E] text-txt-muted flex items-center justify-center text-[11px] font-medium font-mono">
+                2
+              </div>
+              <span class="text-xs font-medium tracking-wider text-txt-muted uppercase font-heading">
+                ПАПКА
+              </span>
+            </div>
+
+            <!-- Connecting Line -->
+            <div class="w-12 h-[2px] bg-[#1E2947] rounded-full"></div>
+
+            <!-- Step 3: Inactive Ready -->
+            <div class="flex items-center gap-2 opacity-50">
+              <div class="w-5 h-5 rounded-full bg-space-800 border border-[#2B395E] text-txt-muted flex items-center justify-center text-[11px] font-medium font-mono">
+                3
+              </div>
+              <span class="text-xs font-medium tracking-wider text-txt-muted uppercase font-heading">
+                ГОТОВО
+              </span>
+            </div>
+
+            <div class="ml-auto text-[11px] font-mono text-txt-muted flex items-center gap-1.5 bg-space-850 px-2.5 py-1 rounded-md border border-[#1E2947]">
+              <span class="w-2 h-2 rounded-full bg-aurora-cyan/80"></span>
+              ШАГ 1 ИЗ 3
+            </div>
+          </div>
+
+          <!-- Main Typography Header -->
+          <div class="space-y-1.5 mb-6">
+            <h2 class="font-heading text-2xl font-bold text-txt-primary tracking-tight">
+              Как установить «Распознаватель»?
+            </h2>
+            <p class="text-sm text-txt-secondary leading-relaxed max-w-xl">
+              Выберите режим. Оба варианта работают <span class="text-aurora-cyan font-medium">без прав администратора</span> и не требуют установки системных драйверов.
+            </p>
+          </div>
+
+          <!-- ================= MODE CARDS (Selectable side-by-side) ================= -->
+          <div class="grid grid-cols-2 gap-4">
+            
+            <!-- CARD 1: «Установить в систему» (SELECTED BY DEFAULT) -->
+            <div class="group relative rounded-xl bg-[#111A35]/90 border border-aurora-cyan/70 p-5 shadow-card-active cursor-pointer transition-all duration-200 hover:border-aurora-cyan">
+              
+              <!-- Subtle top inner highlight line -->
+              <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/40 to-transparent"></div>
+              
+              <!-- Selection Status Radio Badge -->
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                  <!-- Radio / Check icon -->
+                  <div class="w-5 h-5 rounded-full bg-aurora-cyan flex items-center justify-center text-space-950 shadow-sm shadow-cyan-400/50">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3.5 8.5L6.5 11.5L12.5 4.5"/>
+                    </svg>
+                  </div>
+                  <span class="text-[11px] font-semibold text-aurora-cyan font-mono tracking-wider uppercase">РЕКОМЕНДУЕТСЯ</span>
+                </div>
+
+                <span class="text-[10px] font-mono text-cyan-300/80 bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded">
+                  STANDALONE USER
+                </span>
+              </div>
+
+              <!-- Bespoke Illustration: Monitor + Drive + Shortcut Orbit -->
+              <div class="h-28 w-full rounded-lg bg-space-950/70 border border-cyan-500/20 mb-4 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent"></div>
+                
+                <!-- Monitor + Shortcut Vector -->
+                <svg class="w-48 h-24" viewBox="0 0 190 95" fill="none">
+                  <!-- Orbiting Shortcut Ring -->
+                  <ellipse cx="95" cy="46" rx="60" ry="24" stroke="#22D3EE" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.6"/>
+                  
+                  <!-- Orbiting particle/shortcut badge -->
+                  <g transform="translate(142, 38)">
+                    <rect x="0" y="0" width="16" height="16" rx="4" fill="#0A1228" stroke="#22D3EE" stroke-width="1"/>
+                    <path d="M4 11L12 5M12 5H7M12 5V10" stroke="#22D3EE" stroke-width="1.2" stroke-linecap="round"/>
+                  </g>
+
+                  <!-- Modern Monitor Frame -->
+                  <rect x="62" y="16" width="66" height="46" rx="5" fill="#121D3D" stroke="#384B80" stroke-width="1.5"/>
+                  <rect x="66" y="20" width="58" height="34" rx="2" fill="#080E21"/>
+                  
+                  <!-- Screen Graphics (App window inside monitor) -->
+                  <rect x="70" y="24" width="50" height="24" rx="2" fill="#101B3A" stroke="#22D3EE" stroke-width="0.8"/>
+                  <line x1="74" y1="28" x2="88" y2="28" stroke="#22D3EE" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="74" y1="34" x2="108" y2="34" stroke="#9AA5C9" stroke-width="1" stroke-linecap="round" opacity="0.7"/>
+                  <line x1="74" y1="39" x2="100" y2="39" stroke="#9AA5C9" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+                  <!-- Monitor Stand Base -->
+                  <path d="M91 62V69H99V62" stroke="#384B80" stroke-width="1.5"/>
+                  <rect x="83" y="69" width="24" height="3" rx="1.5" fill="#384B80"/>
+
+                  <!-- Fast NVMe Drive Symbol beside monitor -->
+                  <g transform="translate(32, 34)">
+                    <rect x="0" y="0" width="22" height="26" rx="3" fill="#0D1630" stroke="#8B5CF6" stroke-width="1.2"/>
+                    <circle cx="11" cy="7" r="2.5" fill="#8B5CF6"/>
+                    <rect x="6" y="14" width="10" height="2" rx="1" fill="#22D3EE"/>
+                    <rect x="6" y="18" width="6" height="2" rx="1" fill="#9AA5C9"/>
+                  </g>
+                </svg>
+              </div>
+
+              <!-- Card Content Details -->
+              <h3 class="font-heading font-bold text-base text-txt-primary group-hover:text-aurora-cyan transition-colors">
+                Установить в систему
+              </h3>
+              <p class="text-xs text-txt-secondary leading-relaxed mt-1.5">
+                Ярлыки в «Пуск» и на рабочем столе, удаление через «Приложения Windows», быстрый запуск и изоляция пользовательских данных в профиле.
+              </p>
+
+              <!-- Meta specs badge -->
+              <div class="mt-3.5 pt-3 border-t border-[#1C2746] flex items-center justify-between text-[11px] font-mono text-txt-muted">
+                <span>Путь: %LocalAppData%</span>
+                <span class="text-aurora-mint flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-aurora-mint"></span> Готово к установке
+                </span>
+              </div>
+            </div>
+
+            <!-- CARD 2: «Портативная версия» (UNSELECTED BUT RICH & CRISP) -->
+            <div class="group relative rounded-xl bg-[#0E152B]/70 border border-[#233154] p-5 shadow-card-idle cursor-pointer transition-all duration-200 hover:border-[#3A4D7C] hover:bg-[#111A34]/80">
+              
+              <!-- Selection Status Radio Badge (Unchecked) -->
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                  <!-- Radio empty circle -->
+                  <div class="w-5 h-5 rounded-full border-2 border-[#3D4F7C] flex items-center justify-center group-hover:border-aurora-cyan transition-colors">
+                    <div class="w-2 h-2 rounded-full bg-transparent group-hover:bg-aurora-cyan/30 transition-colors"></div>
+                  </div>
+                  <span class="text-[11px] font-semibold text-txt-muted group-hover:text-txt-secondary transition-colors font-mono tracking-wider uppercase">АВТОНОМНО</span>
+                </div>
+
+                <span class="text-[10px] font-mono text-txt-muted bg-space-850 border border-[#213052] px-2 py-0.5 rounded">
+                  PORTABLE DIR
+                </span>
+              </div>
+
+              <!-- Bespoke Illustration: USB Stick + Folder + Travel Case -->
+              <div class="h-28 w-full rounded-lg bg-space-950/50 border border-[#1E2B4B] mb-4 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent"></div>
+
+                <!-- USB + Portable Folder Vector -->
+                <svg class="w-48 h-24" viewBox="0 0 190 95" fill="none">
+                  <!-- Travel Case Outer Outline (Soft backdrop) -->
+                  <rect x="25" y="16" width="140" height="64" rx="8" stroke="#25355B" stroke-width="1.2" stroke-dasharray="3 3"/>
+                  
+                  <!-- Portable Folder Artwork -->
+                  <g transform="translate(42, 26)">
+                    <path d="M0 6C0 3.79086 1.79086 2 4 2H22L28 8H56C58.2091 8 60 9.79086 60 12V44C60 46.2091 58.2091 48 56 48H4C1.79086 48 0 46.2091 0 44V6Z" fill="#111B38" stroke="#384B80" stroke-width="1.2"/>
+                    <path d="M4 16H56V42C56 44.2091 54.2091 46 52 46H8C5.79086 46 4 44.2091 4 42V16Z" fill="#152248" stroke="#8B5CF6" stroke-width="1"/>
+                    
+                    <!-- Raspoznavatel miniature mark inside folder -->
+                    <circle cx="30" cy="31" r="5" stroke="#22D3EE" stroke-width="1"/>
+                    <circle cx="30" cy="31" r="2" fill="#22D3EE"/>
+                  </g>
+
+                  <!-- High-tech USB Flash Drive -->
+                  <g transform="translate(114, 30)">
+                    <!-- USB Connector plug -->
+                    <rect x="4" y="0" width="16" height="12" rx="1.5" fill="#1E2A4A" stroke="#4B5E8C" stroke-width="1"/>
+                    <rect x="7" y="3" width="3" height="4" fill="#0A1022"/>
+                    <rect x="14" y="3" width="3" height="4" fill="#0A1022"/>
+                    <!-- USB Drive Case Body -->
+                    <rect x="0" y="10" width="24" height="40" rx="4" fill="#0E1733" stroke="#22D3EE" stroke-width="1.2"/>
+                    <!-- Activity LED Indicator -->
+                    <circle cx="12" cy="18" r="2" fill="#34D399"/>
+                    <!-- Grip ridges -->
+                    <line x1="6" y1="28" x2="18" y2="28" stroke="#384B80" stroke-width="1.5"/>
+                    <line x1="6" y1="34" x2="18" y2="34" stroke="#384B80" stroke-width="1.5"/>
+                    <line x1="6" y1="40" x2="18" y2="40" stroke="#384B80" stroke-width="1.5"/>
+                  </g>
+
+                  <!-- Data transfer packets connecting Folder and USB -->
+                  <circle cx="106" cy="42" r="1.5" fill="#8B5CF6"/>
+                  <circle cx="109" cy="49" r="1.5" fill="#22D3EE"/>
+                </svg>
+              </div>
+
+              <!-- Card Content Details -->
+              <h3 class="font-heading font-bold text-base text-txt-primary group-hover:text-txt-primary transition-colors">
+                Портативная версия
+              </h3>
+              <p class="text-xs text-txt-secondary leading-relaxed mt-1.5">
+                Папка <span class="font-mono text-txt-primary text-[11px]">Raspoznavatel-Portable</span> создаётся рядом с установщиком. Без записей в реестр Windows и ярлыков.
+              </p>
+
+              <!-- Meta specs badge -->
+              <div class="mt-3.5 pt-3 border-t border-[#1C2746] flex items-center justify-between text-[11px] font-mono text-txt-muted">
+                <span>Для флешек и внешних дисков</span>
+                <span class="text-txt-muted">Zero Registry</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ================= BOTTOM PANEL: Drive Space & Footer Actions ================= -->
+        <div class="relative z-10 pt-4 space-y-4">
+          
+          <!-- Bottom Info Strip: Drive/Space Glyph & Space Requirements -->
+          <div class="flex items-center justify-between px-4 py-2.5 rounded-lg bg-space-850/80 border border-[#1E2B4B] backdrop-blur-md">
+            <div class="flex items-center gap-3">
+              <!-- Hard Drive / SSD Icon -->
+              <div class="w-7 h-7 rounded-md bg-space-950 border border-cyan-500/30 flex items-center justify-center text-aurora-cyan shrink-0">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"/>
+                  <line x1="6" y1="12" x2="6.01" y2="12" stroke-width="3"/>
+                  <line x1="10" y1="12" x2="10.01" y2="12" stroke-width="3"/>
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <div class="text-xs font-medium text-txt-primary flex items-center gap-2">
+                  <span>Потребуется ≈ <strong class="text-aurora-cyan font-semibold">760 МБ</strong></span>
+                  <span class="text-txt-muted">·</span>
+                  <span class="text-txt-secondary">доступно на диске C: <strong class="text-txt-primary font-semibold">142 ГБ</strong></span>
+                </div>
+                <span class="text-[10px] text-txt-muted">Все временные файлы автоматически очищаются после установки</span>
+              </div>
+            </div>
+
+            <!-- Tiny Note -->
+            <div class="text-[11px] font-mono text-txt-muted/90 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-txt-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>Данные можно удалить в любой момент</span>
+            </div>
+          </div>
+
+          <!-- Wizard Footer Controls -->
+          <footer class="flex items-center justify-between pt-2 border-t border-[#1C2746]">
+            <!-- Left: Ghost Button «Назад» -->
+            <button class="px-5 py-2.5 rounded-lg border border-[#233153] bg-space-850 hover:bg-space-800 text-txt-secondary hover:text-txt-primary text-xs font-semibold tracking-wide transition-all flex items-center gap-2 group">
+              <svg class="w-3.5 h-3.5 text-txt-muted group-hover:text-txt-primary transition-colors" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 12L6 8L10 4"/>
+              </svg>
+              <span>Назад</span>
+            </button>
+
+            <!-- Right Buttons: Cancel & Primary Cyan Button «Далее» -->
+            <div class="flex items-center gap-3">
+              <button class="px-4 py-2.5 rounded-lg text-xs font-medium text-txt-muted hover:text-txt-secondary transition-colors">
+                Отмена
+              </button>
+
+              <!-- Primary Button: Glowing Cyan/Teal Gradient, Dark & Tinted -->
+              <button class="relative px-8 py-2.5 rounded-lg bg-gradient-to-r from-[#0E8A9E] via-[#14B8A6] to-[#06B6D4] hover:from-[#159EB4] hover:to-[#08C7E8] text-[#040C1A] text-xs font-bold font-heading tracking-wider uppercase transition-all duration-200 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 flex items-center gap-2 active:scale-[0.99]">
+                <!-- Top subtle button sheen -->
+                <div class="absolute top-0 left-0 right-0 h-[1px] bg-white/40 rounded-t-lg"></div>
+                <span>Далее</span>
+                <svg class="w-3.5 h-3.5 stroke-[#040C1A]" viewBox="0 0 16 16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 4L10 8L6 12"/>
+                </svg>
+              </button>
+            </div>
+          </footer>
+
+        </div>
+      </main>
+
+      <!-- ================= 4. FAR RIGHT DECORATIVE RAIL (Narrow ~34px) ================= -->
+      <aside class="w-[34px] bg-[#060A15] border-l border-[#19233D] flex flex-col items-center justify-between py-5 select-none shrink-0 relative">
+        
+        <!-- Top Technical Glyphs -->
+        <div class="flex flex-col items-center gap-2.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-aurora-cyan shadow-sm shadow-cyan-400"></div>
+          <div class="w-1 h-1 rounded-full bg-aurora-violet"></div>
+          <div class="w-1 h-1 rounded-full bg-[#2A395E]"></div>
+          <!-- Small Technical Ticks -->
+          <div class="flex flex-col gap-1 my-2">
+            <div class="w-2.5 h-[1px] bg-[#223359]"></div>
+            <div class="w-4 h-[1px] bg-aurora-cyan/40"></div>
+            <div class="w-2.5 h-[1px] bg-[#223359]"></div>
+            <div class="w-1.5 h-[1px] bg-[#223359]"></div>
+          </div>
+        </div>
+
+        <!-- Vertical Micro-label: RSP-270 / OFFLINE INSTALLER -->
+        <div class="transform -rotate-90 whitespace-nowrap text-[9px] font-mono tracking-[0.2em] text-txt-muted/70 uppercase">
+          RSP-270 // OFFLINE INSTALLER
+        </div>
+
+        <!-- Bottom Technical Alignment Ticks -->
+        <div class="flex flex-col items-center gap-2">
+          <div class="flex flex-col gap-1 mb-2">
+            <div class="w-1.5 h-[1px] bg-[#223359]"></div>
+            <div class="w-2.5 h-[1px] bg-[#223359]"></div>
+            <div class="w-4 h-[1px] bg-aurora-violet/50"></div>
+            <div class="w-2.5 h-[1px] bg-[#223359]"></div>
+          </div>
+          <!-- Hex status indicator -->
+          <span class="text-[8px] font-mono text-txt-muted/50">0x27</span>
+          <div class="w-1.5 h-1.5 rounded-sm border border-aurora-cyan/40"></div>
+        </div>
+
+      </aside>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
